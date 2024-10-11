@@ -11,9 +11,9 @@ class Window(UIBase):
         pygame.display.set_caption("power")
         print(self.window)
         self.event_callback = []
-        self.event_callback.append([lambda: quit(0), pygame.QUIT])
+        self.add_event([lambda: quit(0), pygame.QUIT])
         self.update_callback = []
-        self.update_callback.append(lambda: self.window.fill((244, 246, 250)))
+        self.add_update(lambda: self.window.fill((244, 246, 250)))
 
     def update(self):
         for event in pygame.event.get():
@@ -26,6 +26,10 @@ class Window(UIBase):
     def loop(self):
         while True:
             self.update()
+    def add_event(self, event):
+        self.event_callback.append(event)
+    def add_update(self, update):
+        self.update_callback.append(update)
 
 
 class Button(UIBase):
@@ -39,11 +43,12 @@ class Button(UIBase):
         self.circle_width = circle_width
         self.text= text
         self.callback = callback
-        self.window.update_callback.append(self.update)
-        self.window.event_callback.append([self.motion, pygame.MOUSEMOTION])
-        self.window.event_callback.append([self.click, pygame.MOUSEBUTTONUP])
+        self.window.add_update(self.update)
+        self.window.add_event([self.motion, pygame.MOUSEMOTION])
+        self.window.add_event([self.click, pygame.MOUSEBUTTONUP])
         self.color = (255, 255, 255)
         self.flag = {"mouse_in_rect": False,"mouse_click": False,"show":True,"type":0}
+        self.children=[]
         self.draw_init()
 
     def motion(self, event):
@@ -61,11 +66,11 @@ class Button(UIBase):
             self.flag["mouse_click"] = False
     def draw_init(self):
         if self.flag["show"]:
-            if self.flag["type"]<=2:
-                if self.flag["type"]==0:
-                    self.color = (52, 61, 74)
-                self=Text(self.window, self.x, self.y, self.width, self.height, self.text)
-                temp.color=self.color
+            if self.flag["type"]==0:
+                self.color = (52, 61, 74)
+            temp=Text(self.window, self.x, self.y, self.width, self.height, self.text)
+            temp.color=self.color
+            self.children.append(temp)
     def update(self):
         if self.flag["show"]:
             if self.flag["type"]<=2:
@@ -77,7 +82,8 @@ class Button(UIBase):
                         self.color = (max(self.color[0] - 1, 11), min(self.color[1] + 1, 91), min(self.color[2] + 1, 203))
                 else:
                     if self.flag["type"]==0:
-                        self.color = min(self.color[0] + 1, 52), max(self.color[1] - 1, 61), max(self.color[2] - 1, 74)
+                        self.color = (min(self.color[0] + 1, 52), max(self.color[1] - 1, 61), max(self.color[2] - 1, 74))
+                for i in self.children:i.update()
                 pygame.draw.circle(self.window.window, self.color,
                                    (self.x + self.circle_width, self.y + self.circle_width), self.circle_width, 1,
                                    False, True, False, False)
@@ -116,7 +122,19 @@ class Text(UIBase):
         self.flag={}
 
     def update(self):
-        text=pygame.font.Font("deng.ttf",self.size).render(self.text,True,self.color)
+        text=pygame.font.Font("deng.ttf",self.size).render(self.text,False,self.color)
         text_rect = text.get_rect()
         text_rect.center=(self.x+self.width//2,self.y+self.height//2)
         self.window.window.blit(text,text_rect)
+class Package(UIBase):
+    def __init__(self,window,x,y,width,height):
+        super().__init__()
+        self.window=window
+        self.x=x
+        self.y=y
+        self.width=width
+        self.height=height
+    def add_update(self,update):
+        self.window.add_update(update)
+    def add_event(self,event):
+        self.window.add_event(event)
